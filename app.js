@@ -18,7 +18,7 @@ const { textSync } = figlet;
 
 //Banner
 import { set } from 'simple-banner';
-import { logsSave, logsSend } from './src/log_data/log_data.js';
+import { logsSave, logsSend } from './src/logs_view.js';
 
 //Local Dependency
 //.env
