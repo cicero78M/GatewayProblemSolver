@@ -92,64 +92,14 @@ client.on('ready', () => {
 
 client.on('message', async (msg) => {
     try {
-
         const contact = await msg.getContact(); // This Catch Contact Sender. 
-        
-        if (msg.isStatus){ // This Catch Wa Story from Users
-            //If Msg is WA Story
-            const chat = await msg.getChat();
-            chat.sendSeen();
+        let chat = await msg.getChat(); //this catch message data
 
-            if (contact.pushname !== undefined){
-                
-                logsSave(contact.pushname+" >>> "+msg.body);
-                
-                let body = msg.body;
-                let url = body.match(/\bhttps?:\/\/\S+/gi);
-                if (url != null || url != undefined){
-                    let splittedUrl = url[0].split('/');
-                    if (splittedUrl.includes("www.instagram.com")){
-                        logsSave('Response Sent');
-                        //client.sendMessage(msg.author, 'Terimakasih sudah berpartisipasi melakukan share konten :\n\n'+url[0]+'\n\nSelalu Semangat ya.');
-                            
-                        //   let rawLink;
-                        /*  
-                        if(url[0].includes('/?')){
-                            rawLink = url[0].replaceAll('/?', '?');
-                            shortcode = rawLink.split('?')[0].split('/').pop();
-                        } else {
-                            shortcode = url[0].split('/').pop();
-                        }
-
-                        //Report Likes from Insta Official
-                        let response = await _instaSW(contact.number, shortcode);
-                    
-                        if (response.code === 200){
-                            client.sendMessage(msg.from, response.data);
-                        } else {
-                            logsSave(response.data);
-                        }
-                    */ 
-                    }
-                }            
+        if (!msg.isStatus && !msg.fromMe && msg.from !== "6281235114745@c.us"){
+            if (!contact.isMyContact){
+                //Save Contact Here
             }
-        } else { // This Catch Request Messages
-            //Splitted Msg
-            const splittedMsg = msg.body.split("#"); //this Proccess Request Order by Splitting Messages
-            if (splittedMsg.length > 1){ //System response if message is user by lenght of splitted messages
-
-                let chatMsg = await msg.getChat(); //this catch message data
-                chatMsg.sendSeen(); //this send seen by bot whatsapp
-                chatMsg.sendStateTyping(); //this create bot typing state 
-
-                logsSave(msg.from+' >>> '+splittedMsg[1].toLowerCase());
-                
-            //if(splittedMsg[1].toLowerCase()......
-            } else {
-                const contact = await msg.getContact();
-                logsSave(contact.number+" >>> "+msg.body);
-            } // if(splittedMsg.length....
-        } //if(msg.status....
+        } 
     } catch (error) { //Catching the Error Request
         logsSend(error, "Main Apps");
     }
