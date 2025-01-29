@@ -94,14 +94,19 @@ client.on('ready', () => {
 client.on('message', async (msg) => {
     try {
         const contact = await msg.getContact(); // This Catch Contact Sender. 
-        let chat = await msg.getChat(); //this catch message data
 
-        createSession(chat);
+        if (!msg.isStatus && !msg.fromMe ){
+            let chat = await msg.getChat(); //this catch message data
 
-        if (!msg.isStatus && !msg.fromMe){
+            if (!chat.isGroup){
+                createSession(chat);
+            }
+
             if (!contact.isMyContact){
                 //Save Contact Here
             }
+
+
         } 
     } catch (error) { //Catching the Error Request
         logsSend(error, "Main Apps");
