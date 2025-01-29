@@ -1,5 +1,5 @@
 //Route
-import express from 'express';
+import express, { response } from 'express';
 const app = express();
 
 //WWebjs
@@ -18,8 +18,11 @@ const { textSync } = figlet;
 
 //Banner
 import { set } from 'simple-banner';
-import { logsSave, logsSend } from './src/logs_view.js';
-import { createSession } from './src/module/session_chat.js';
+import { logsError, logsSave, logsSend } from './src/logs_view.js';
+
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { newOpr, reqOpr } from './src/module/add_opr.js';
+import { reqOprView } from './src/view/opr_req.js';
 
 //Local Dependency
 //.env
@@ -95,15 +98,96 @@ client.on('message', async (msg) => {
     try {
         const contact = await msg.getContact(); // This Catch Contact Sender. 
 
-        if (!msg.isStatus && !msg.fromMe && !(msg.from).includes('@g.us')){
-            let chat = await msg.getChat(); //this catch message data
-            createSession(chat);          
-            
+        if(msg.body.startsWith('!newopr')){
 
-            if (!contact.isMyContact){
-                //Save Contact Here
-            }
-        } 
+            let contact = `${msg.body.split(' ')[1]}@c.us`;
+            let name = msg.body.split(' ')[2];
+
+            newOpr(contact, name);
+
+        } else if (msg.body.startsWith('!reqopr')){
+
+            logsSave("Starting Request")
+
+            await reqOpr().then(
+                response => reqOprView(response.data, msg.from).then(
+                    response => logsSend(response.data)
+                ).catch(
+                    error => logsError(error)
+                )
+
+            ).catch(
+                error => logsError(error)
+            )
+        }
+
+
+        
+        // if (!msg.isStatus && !msg.fromMe && !(msg.from).includes('@g.us')){
+            
+        //     //Create newData
+        //     let newChat = new Object();
+    
+        //     newChat.timestamp = msg.timestamp;
+        //     newChat.id = msg.id;
+        //     newChat.from = msg.from;
+        //     newChat.opr = '';
+        //     newChat.status = true;
+
+        //     try {
+        //         let chatList = readFileSync(`json_data/chat_session`);
+        //         // Check Chat ID State & Data
+        //         if(chatList.includes(`${msg.id}.json`)){
+        //             chatList.forEach(element => {
+        //                 if (element === `${msg.id}.json`){
+        //                     let chatData = JSON.parse(readFileSync(`json_data/chat_session/${element}`));
+        //                     if(chatData.status){
+        //                         client.sendMessage(chatData.opr, `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
+        //                     }
+        //                 }
+        //             });
+
+        //         } else {
+                    
+        //             mkdirSync(`json_data/chat_session/`);
+        //             writeFileSync(`json_data/chat_session/${msg.id}.json`, JSON.stringify(newChat));
+
+        //         }
+
+        //     } catch (error) {
+
+        //         mkdirSync(`json_data/chat_session/`);
+        //         writeFileSync(`json_data/chat_session/${msg.id}.json`, JSON.stringify(newChat));
+                
+        //     }
+
+        //     if (!contact.isMyContact){
+        //         //Save Contact Here
+        //         let newContact = new Object();
+        //         newContact.contact = msg.from;
+        //         newContact.pushname = msg.pushname ? msg.pushname : msg.contact;
+
+        //         try {
+
+        //             let contactList = readFileSync(`json_data/contact_data/contact_file.json`);
+        //             let contacts = new Array();
+
+        //             contactList.forEach(element => {
+        //                 contacts.push(element.contact);
+        //             });
+
+        //             if (!contacts.includes(msg.from)){
+        //                 contactList.push(contact)
+        //                 writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
+        //             }
+
+        //         } catch (error) {
+        //             contactList.push(newContact)
+        //             mkdirSync(`json_data/contact_data/`);
+        //             writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
+        //         } 
+        //     }
+        // } 
     } catch (error) { //Catching the Error Request
         logsSend(error, "Main Apps");
     }
