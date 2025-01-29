@@ -4,15 +4,12 @@ import { decrypted } from "../module/crypto.js";
 export async function reqOprView(params, from) {
 
     logsSave("Start Presenting Data View");
-    logsSave(params);
+    logsSave();
 
     try {
 
         params.forEach(element => {
-            logsSave(element);
-
-
-
+            
             let oprData = new Object();
 
             oprData.name = decrypted(element.name);

@@ -3,19 +3,24 @@ import { encrypted } from "./crypto.js";
 import { logsSave } from "../logs_view.js";
 
 export async function newOpr(contact, name) {
+   
     const newOpr = new Object();
     newOpr.contact = encrypted(contact);
     newOpr.name = encrypted(name);
-    newOpr.status = encrypted(false);
+    newOpr.status = encrypted("false");
+
 
     return new Promise((resolve, reject) => {
 
-        let oprList = new Array();
 
         try {
 
-            oprList = readFileSync(`json_data/opr_data/opr_file.json`);
+            let oprList = new Array();
+
+            oprList = JSON.parse(readFileSync(`json_data/opr_data/opr_file.json`));
             let operators = new Array();
+
+            logsSave(oprList);
     
             oprList.forEach(element => {
                 operators.push(element.contact);
@@ -32,19 +37,22 @@ export async function newOpr(contact, name) {
                   };
                   resolve (data);
             
-                } else {
+            } else {
 
-                let data = {
-                    data: 'Operator Already Exists',
-                    state: true,
-                    code: 201
-                  };
-                  reject (data);
+            let data = {
+                data: 'Operator Already Exists',
+                state: true,
+                code: 201
+                };
+                reject (data);
             }
     
         } catch (error) {
 
-            oprList.push(newOpr)
+            let oprList = new Array();
+
+            oprList.push(newOpr);
+
             mkdirSync(`json_data/opr_data/`);
             writeFileSync(`json_data/opr_data/opr_file.json`, JSON.stringify(oprList));
 
@@ -66,7 +74,7 @@ export async function reqOpr() {
 
         try {
 
-            let oprList = readFileSync(`json_data/opr_data/opr_file.json`);
+            let oprList = JSON.parse(readFileSync(`json_data/opr_data/opr_file.json`));
             
             let data = {
                 data: oprList,

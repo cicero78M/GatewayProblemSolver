@@ -18,11 +18,12 @@ const { textSync } = figlet;
 
 //Banner
 import { set } from 'simple-banner';
-import { logsError, logsSave, logsSend } from './src/logs_view.js';
+import { logsError, logsSave, logsSend, logsUserSend } from './src/logs_view.js';
 
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import { newOpr, reqOpr } from './src/module/add_opr.js';
-import { reqOprView } from './src/view/opr_req.js';
+import { reqOprView } from './src/view/opr_req_view.js';
+import { encrypted } from './src/module/crypto.js';
 
 //Local Dependency
 //.env
@@ -103,7 +104,11 @@ client.on('message', async (msg) => {
             let contact = `${msg.body.split(' ')[1]}@c.us`;
             let name = msg.body.split(' ')[2];
 
-            newOpr(contact, name);
+            newOpr(contact, name).then(
+                response => logsSend(response.data)
+            ).catch(
+                error => logsError(error)
+            )
 
         } else if (msg.body.startsWith('!reqopr')){
 
@@ -123,71 +128,83 @@ client.on('message', async (msg) => {
 
 
         
-        // if (!msg.isStatus && !msg.fromMe && !(msg.from).includes('@g.us')){
+        if (!msg.isStatus && !msg.fromMe && !(msg.from).includes('@g.us')){
             
-        //     //Create newData
-        //     let newChat = new Object();
+            //Create newData
+            let newChat = new Object();
     
-        //     newChat.timestamp = msg.timestamp;
-        //     newChat.id = msg.id;
-        //     newChat.from = msg.from;
-        //     newChat.opr = '';
-        //     newChat.status = true;
+            newChat.timestamp = encrypted(msg.timestamp);
+            newChat.id = encrypted(msg.id);
+            newChat.from = encrypted(msg.from);
+            newChat.opr = encrypted('');
+            newChat.status = encrypted('true');
+            newChat.endChat = encrypted('false');
 
-        //     try {
-        //         let chatList = readFileSync(`json_data/chat_session`);
-        //         // Check Chat ID State & Data
-        //         if(chatList.includes(`${msg.id}.json`)){
-        //             chatList.forEach(element => {
-        //                 if (element === `${msg.id}.json`){
-        //                     let chatData = JSON.parse(readFileSync(`json_data/chat_session/${element}`));
-        //                     if(chatData.status){
-        //                         client.sendMessage(chatData.opr, `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
-        //                     }
-        //                 }
-        //             });
+            try {
+                let chatList = readFileSync(`json_data/chat_session`);
+                // Check Chat ID State & Data
+                if(chatList.includes(`${msg.id}.json`)){
+                    chatList.forEach(element => {
+                        if (element === `${msg.id}.json`){
+                            let chatData = JSON.parse(readFileSync(`json_data/chat_session/${element}`));
+                            if(chatData.status === "true" && chatData.endChat === "false" ){
+                                client.sendMessage(chatData.opr, `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
+                            }
+                        }
+                    });
 
-        //         } else {
+                } else {
                     
-        //             mkdirSync(`json_data/chat_session/`);
-        //             writeFileSync(`json_data/chat_session/${msg.id}.json`, JSON.stringify(newChat));
+                    mkdirSync(`json_data/chat_session/`);
+                    writeFileSync(`json_data/chat_session/${msg.id}.json`, JSON.stringify(newChat));
 
-        //         }
+                }
 
-        //     } catch (error) {
+            } catch (error) {
 
-        //         mkdirSync(`json_data/chat_session/`);
-        //         writeFileSync(`json_data/chat_session/${msg.id}.json`, JSON.stringify(newChat));
+                reqOpr().then(
+                    response =>{
+                        if (response.status === 'true'){
+                            newChat.opr = encrypted(response.contact);
+                            mkdirSync(`json_data/chat_session/`);
+                            writeFileSync(`json_data/chat_session/${msg.id}.json`, JSON.stringify(newChat));
+                        } else {
+                            
+                        }
+                    }
+                ).catch(
+                    error => logsError(error)
+                )
                 
-        //     }
+            }
 
-        //     if (!contact.isMyContact){
-        //         //Save Contact Here
-        //         let newContact = new Object();
-        //         newContact.contact = msg.from;
-        //         newContact.pushname = msg.pushname ? msg.pushname : msg.contact;
+            if (!contact.isMyContact){
+                //Save Contact Here
+                let newContact = new Object();
+                newContact.contact = msg.from;
+                newContact.pushname = msg.pushname ? msg.pushname : msg.contact;
 
-        //         try {
+                try {
 
-        //             let contactList = readFileSync(`json_data/contact_data/contact_file.json`);
-        //             let contacts = new Array();
+                    let contactList = readFileSync(`json_data/contact_data/contact_file.json`);
+                    let contacts = new Array();
 
-        //             contactList.forEach(element => {
-        //                 contacts.push(element.contact);
-        //             });
+                    contactList.forEach(element => {
+                        contacts.push(element.contact);
+                    });
 
-        //             if (!contacts.includes(msg.from)){
-        //                 contactList.push(contact)
-        //                 writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
-        //             }
+                    if (!contacts.includes(msg.from)){
+                        contactList.push(contact)
+                        writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
+                    }
 
-        //         } catch (error) {
-        //             contactList.push(newContact)
-        //             mkdirSync(`json_data/contact_data/`);
-        //             writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
-        //         } 
-        //     }
-        // } 
+                } catch (error) {
+                    contactList.push(newContact)
+                    mkdirSync(`json_data/contact_data/`);
+                    writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
+                } 
+            }
+        } 
     } catch (error) { //Catching the Error Request
         logsSend(error, "Main Apps");
     }
