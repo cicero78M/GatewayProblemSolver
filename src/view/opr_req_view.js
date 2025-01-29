@@ -4,44 +4,47 @@ import { decrypted } from "../module/crypto.js";
 export async function reqOprView(params, from) {
 
     logsSave("Start Presenting Data View");
-    logsSave();
+    return new Promise((resolve, reject) => {
 
-    try {
+        try {
 
-        params.forEach(element => {
-            
-            let oprData = new Object();
+            params.forEach(element => {
+                
+                let oprData = new Object();
 
-            oprData.name = decrypted(element.name);
-            oprData.contact = decrypted(element.contact);
-            oprData.status = decrypted(element.status);
-    
-            logsUserSend (from,
-                `Data operator :
-                Nama : ${oprData.name}
-                Contact : ${oprData.contact}
-                Working Status : ${oprData.status} 
-                `
-            ); 
-            
-        });
-
-        let data = {
-            data: 'End of Operator Request Data List',
-            state: true,
-            code: 200
-          };
-
-          resolve (data);
-
-    } catch (error) {
+                oprData.name = decrypted(element.name);
+                oprData.contact = decrypted(element.contact);
+                oprData.status = decrypted(element.status);
+        
+                logsUserSend (from,
+                    `Data operator :
+                    Nama : ${oprData.name}
+                    Contact : ${oprData.contact}
+                    Working Status : ${oprData.status} 
+                    `
+                ); 
+                
+            });
 
             let data = {
-                data: error,
-                msg : "Error on Req Opr View",
+                data: 'End of Operator Request Data List',
                 state: true,
-                code: 303
-                };
-            reject (data);        
-    }
+                code: 200
+            };
+
+            resolve (data);
+
+        } catch (error) {
+
+                let data = {
+                    data: error,
+                    msg : "Error on Req Opr View",
+                    state: true,
+                    code: 303
+                    };
+                reject (data);        
+        }
+        
+    });
+
 }

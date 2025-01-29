@@ -12,7 +12,6 @@ export async function newOpr(contact, name) {
 
     return new Promise((resolve, reject) => {
 
-
         try {
 
             let oprList = new Array();
@@ -82,9 +81,13 @@ export async function reqOpr() {
                 code: 200
               };
 
+              console.log(oprList)
+
               resolve (data);
 
         } catch (error) {
+
+            console.log(error)
             let data = {
                 data: error,
                 msg : "Error on Req Opr List",
