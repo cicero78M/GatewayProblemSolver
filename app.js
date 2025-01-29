@@ -210,8 +210,9 @@ client.on('message', async (msg) => {
                         }
                     }
                 ).catch(
-                    error => logsError(error)
-                )
+                    error => {logsError(error)
+                    console.log("error disini")
+            })
                 
             }
 
