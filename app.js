@@ -19,6 +19,7 @@ const { textSync } = figlet;
 //Banner
 import { set } from 'simple-banner';
 import { logsSave, logsSend } from './src/logs_view.js';
+import { createSession } from './src/module/session_chat.js';
 
 //Local Dependency
 //.env
@@ -95,7 +96,9 @@ client.on('message', async (msg) => {
         const contact = await msg.getContact(); // This Catch Contact Sender. 
         let chat = await msg.getChat(); //this catch message data
 
-        if (!msg.isStatus && !msg.fromMe && msg.from !== "6281235114745@c.us"){
+        createSession(chat);
+
+        if (!msg.isStatus && !msg.fromMe){
             if (!contact.isMyContact){
                 //Save Contact Here
             }

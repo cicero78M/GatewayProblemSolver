@@ -136,12 +136,6 @@ dist
 .pnp.*
 *.old
 
-# credential
-tiktokKey.json
-ciceroKey.json
-instaKey.json
-dbKey.json
-client_data.json
-
 # User Data
-user_data/*.json
+json_data/*.json
+json_data/chat_session/*.json
