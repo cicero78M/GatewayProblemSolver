@@ -96,10 +96,10 @@ client.on('message', async (msg) => {
         const contact = await msg.getContact(); // This Catch Contact Sender. 
 
         if (!msg.isStatus && !msg.fromMe ){
-            let chat = await msg.getChat(); //this catch message data
 
-            if (!chat.isGroup){
-                createSession(chat);
+            let chat = await msg.getChat(); //this catch message data
+            if (!chat.isGroup ){
+                createSession(chat);          
             }
 
             if (!contact.isMyContact){
