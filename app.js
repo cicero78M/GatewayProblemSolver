@@ -20,7 +20,7 @@ const { textSync } = figlet;
 import { set } from 'simple-banner';
 import { logsError, logsSave, logsSend, logsUserSend } from './src/logs_view.js';
 
-import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { newOpr, reqOpr } from './src/module/add_opr.js';
 import { reqOprView } from './src/view/opr_req_view.js';
 import { decrypted, encrypted } from './src/module/crypto.js';
@@ -97,9 +97,18 @@ client.on('ready', () => {
 
 client.on('message', async (msg) => {
     try {
-        const contact = await msg.getContact(); // This Catch Contact Sender. 
-        const contacts = new Array();
 
+        let contacts = new Array();
+
+        reqOpr().then(
+            response =>{
+                response.data.forEach(element => {
+                    contacts.push(decrypted(element.contact));
+                });
+            }
+        ).catch(
+            error => logsError(error)
+        )
         if(msg.body.startsWith('!newopr')){
 
             let contact = `${msg.body.split(' ')[1]}@c.us`;
@@ -125,124 +134,149 @@ client.on('message', async (msg) => {
             ).catch(
                 error => logsError(error)
             )
-        }
+        } else if ((msg.body).toLowerCase().startsWith('register#')){
 
-        // reqOpr().then(
-        //     response =>{
-        //         response.forEach(element => {
-        //             contacts.push(decrypted(element.contact));
-        //         });
-
-        //         console.log(contacts);
-        //     }
-        // ).catch(
-        //     error => logsError(error)
-        // )
-
-        
-        if (!msg.isStatus && !msg.fromMe && !(msg.from).includes('@g.us')){
             
-            //Create newData
-            let newChat = new Object();
-    
-            newChat.timestamp = encrypted(msg.timestamp);
-            newChat.id = encrypted(msg.id);
-            newChat.from = encrypted(msg.from);
-            newChat.opr = encrypted('null');
-            newChat.status = encrypted('true');
 
-            try {
+        } else {    
+            if (!msg.isStatus && !msg.fromMe && !(msg.from).includes('@g.us') && !contacts.includes(msg.from)){
+                
+                // Create newData
+                let newChat = new Object();
+        
+                newChat.timestamp = msg.timestamp;
+                newChat.from = msg.from;
+                newChat.opr = 'null';
+                newChat.status = 'true';
 
-                let chatList = readFileSync(`json_data/chat_session`);
-                console.log(chatList)
-                // Check Chat ID State & Data
-                if(chatList.includes(`${msg.id}.json`)){
-                    chatList.forEach(element => {
-                        if (element === `${msg.id}.json`){
-                            let chatData = JSON.parse(readFileSync(`json_data/chat_session/${element}`));
-                            if(decrypted(chatData.status) === "true" ){
-                                logsUserSend(decrypted(chatData.opr), 
-                                `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
+                try {
+
+                    let chatList = readdirSync(`json_data/chat_session`);
+
+                    console.log(chatList)
+                    // Check Chat ID State & Data
+                    if(chatList.includes(`${msg.from}.json`)){
+                        chatList.forEach(element => {
+                            if (element === `${msg.from}.json`){
+
+                                let chatData = JSON.parse(readFileSync(`json_data/chat_session/${element}`));
+
+                                if(chatData.status === "true" ){
+                                    logsUserSend(decrypted(chatData.opr), 
+                                    `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
+                                }
                             }
-                        }
-                    });
+                        });
 
-                } else {
+                    } else {
+
+                        reqOpr().then(
+                            response =>{
+                                response.data.forEach(element => {
+                                    if (decrypted(element.status) === 'false' ){    
+
+                                        element.status = encrypted('true');
+                                        oprReady = true;
+                                        
+                                        newChat.opr = decrypted(element.contact);
+                                        writeFileSync(`json_data/chat_session/${msg.from}.json`, 
+                                            JSON.stringify(newChat));    
+
+                                        writeFileSync(`json_data/opr_data/opr_file.json`, JSON.stringify(response.data));
+
+                                        logsUserSend(decrypted(response.contact), 
+                                        `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
+                                    }
+            
+                                    if (!oprReady){
+                                        logsUserSend(
+                                            msg.from, 
+`Mohon Maaf, Saat ini CS Kami sedang melayani pelanggan lainnya,
+Silahkan tunggu beberapa saat lagi, kami akan segera menghubungi anda kembali.
+Terimakasih sudah bersabar menunggu.`
+                                        );
+                                    }
+                                    
+                                });
+
+                            }
+                        ).catch(
+                            error => logsError(error)                            
+                        );
+                    }
+                } catch (error) {
+
+                    let oprReady = false;
 
                     reqOpr().then(
                         response =>{
-                            if (decrypted(response.status) === 'false' ){    
-                                oprReady = true;
-                                newChat.opr = encrypted(response.contact);
-                                writeFileSync(`json_data/chat_session/${msg.id}.json`, 
-                                    JSON.stringify(newChat));    
-                                logsUserSend(decrypted(response.contact), 
-                                `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
-                            }
-    
-                            if (!oprReady){
-                                logsUserSend(msg.from, 
-                                    "Mohon Maaf, Saat ini CS Kami sedang melayani pelanggan lainnya,\n\nSilahkan tunggu beberapa saat lagi, kami akan segera menghubungi anda kembali.\n\nTerimakasih sudah bersabar menunggu.")
-                            }
+                            response.data.forEach(element => {
+
+                                if (decrypted(element.status) === 'false'){
+
+                                    element.status = encrypted('true');
+
+                                    writeFileSync(`json_data/opr_data/opr_file.json`, JSON.stringify(response.data));
+
+                                    oprReady = true;
+                                    newChat.opr = decrypted(element.contact);
+                                    mkdirSync(`json_data/chat_session/`);
+                                    writeFileSync(`json_data/chat_session/${msg.from}.json`, 
+                                        JSON.stringify(newChat));
+        
+                                    logsUserSend(decrypted(response.contact), 
+                                    `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
+                                }
+        
+                                if (!oprReady){
+                                    logsUserSend(
+                                        msg.from, 
+`Mohon Maaf, Saat ini CS Kami sedang melayani pelanggan lainnya,
+Silahkan tunggu beberapa saat lagi, kami akan segera menghubungi anda kembali.
+Terimakasih sudah bersabar menunggu.`
+                                    );
+                                }
+                                
+                            });
+
                         }
                     ).catch(
-                        error => logsError(error)
-                    )
+                        error => {
+                            logsError(error);
+                        }
+                    );
+                    
                 }
 
-            } catch (error) {
+                // if (!contact.isMyContact){
+                //     //Save Contact Here
+                //     let newContact = new Object();
+                //     newContact.contact = msg.from;
+                //     newContact.pushname = msg.pushname ? msg.pushname : msg.contact;
 
-                let oprReady = false;
+                //     try {
 
-                reqOpr().then(
-                    response =>{
-                        if (decrypted(response.status) === 'false'){
-                            oprReady = true;
-                            newChat.opr = encrypted(response.contact);
-                            mkdirSync(`json_data/chat_session/`);
-                            writeFileSync(`json_data/chat_session/${msg.id}.json`, JSON.stringify(newChat));
+                //         let contactList = readFileSync(`json_data/contact_data/contact_file.json`);
+                //         let contacts = new Array();
 
-                            logsUserSend(decrypted(response.contact), `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
-                        }
+                //         contactList.forEach(element => {
+                //             contacts.push(element.contact);
+                //         });
 
-                        if (!oprReady){
-                            logsUserSend(msg.from, "Mohon Maaf, Saat ini CS Kami sedang melayani pelanggan lainnya,\n\nSilahkan tunggu beberapa saat lagi, kami akan segera menghubungi anda kembali.\n\nTerimakasih sudah bersabar menunggu.")
-                        }
-                    }
-                ).catch(
-                    error => {logsError(error)
-                    console.log("error disini")
-            })
-                
-            }
+                //         if (!contacts.includes(msg.from)){
+                //             contactList.push(contact)
+                //             writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
+                //         }
 
-            // if (!contact.isMyContact){
-            //     //Save Contact Here
-            //     let newContact = new Object();
-            //     newContact.contact = msg.from;
-            //     newContact.pushname = msg.pushname ? msg.pushname : msg.contact;
+                //     } catch (error) {
+                //         contactList.push(newContact)
+                //         mkdirSync(`json_data/contact_data/`);
+                //         writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
+                //     } 
+                // }
+            } 
+        }
 
-            //     try {
-
-            //         let contactList = readFileSync(`json_data/contact_data/contact_file.json`);
-            //         let contacts = new Array();
-
-            //         contactList.forEach(element => {
-            //             contacts.push(element.contact);
-            //         });
-
-            //         if (!contacts.includes(msg.from)){
-            //             contactList.push(contact)
-            //             writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
-            //         }
-
-            //     } catch (error) {
-            //         contactList.push(newContact)
-            //         mkdirSync(`json_data/contact_data/`);
-            //         writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
-            //     } 
-            // }
-        } 
     } catch (error) { //Catching the Error Request
         logsSend(error, "Main Apps");
     }

@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
-import { encrypted } from "./crypto.js";
+import { decrypted, encrypted } from "./crypto.js";
 import { logsSave } from "../logs_view.js";
 
 export async function newOpr(contact, name) {
@@ -22,7 +22,7 @@ export async function newOpr(contact, name) {
             logsSave(oprList);
     
             oprList.forEach(element => {
-                operators.push(element.contact);
+                operators.push(decrypted(element.contact));
             });
     
             if (!operators.includes(contact)){
@@ -81,13 +81,10 @@ export async function reqOpr() {
                 code: 200
               };
 
-              console.log(oprList)
-
               resolve (data);
 
         } catch (error) {
 
-            console.log(error)
             let data = {
                 data: error,
                 msg : "Error on Req Opr List",
