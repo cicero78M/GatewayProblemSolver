@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
-import { decrypted, encrypted } from "./crypto.js";
+import { decrypted, encrypted } from "../module/crypto.js";
 import { logsSave } from "../logs_view.js";
 
 export async function newOpr(contact, name) {

@@ -21,7 +21,7 @@ import { set } from 'simple-banner';
 import { logsError, logsSave, logsSend, logsUserSend } from './src/logs_view.js';
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
-import { newOpr, reqOpr } from './src/module/add_opr.js';
+import { newOpr, reqOpr } from './src/controller/add_opr.js';
 import { reqOprView } from './src/view/opr_req_view.js';
 import { decrypted, encrypted } from './src/module/crypto.js';
 
@@ -109,6 +109,7 @@ client.on('message', async (msg) => {
         ).catch(
             error => logsError(error)
         )
+
         if(msg.body.startsWith('!newopr')){
 
             let contact = `${msg.body.split(' ')[1]}@c.us`;
@@ -135,8 +136,6 @@ client.on('message', async (msg) => {
                 error => logsError(error)
             )
         } else if ((msg.body).toLowerCase().startsWith('register#')){
-
-            
 
         } else {    
             if (!msg.isStatus && !msg.fromMe && !(msg.from).includes('@g.us') && !contacts.includes(msg.from)){
