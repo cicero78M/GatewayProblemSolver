@@ -1,13 +1,14 @@
-import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import { decrypted, encrypted } from "../module/crypto.js";
-import { logsSave } from "../logs_view.js";
+import { logsSave } from "../view/logs_view.js";
 
 export async function newOpr(contact, name) {
    
     const newOpr = new Object();
     newOpr.contact = encrypted(contact);
     newOpr.name = encrypted(name);
-    newOpr.status = encrypted("false");
+    newOpr.status = false;
+    newOpr.onClient = encrypted("null");
 
 
     return new Promise((resolve, reject) => {
@@ -52,7 +53,6 @@ export async function newOpr(contact, name) {
 
             oprList.push(newOpr);
 
-            mkdirSync(`json_data/opr_data/`);
             writeFileSync(`json_data/opr_data/opr_file.json`, JSON.stringify(oprList));
 
             let data = {
@@ -90,7 +90,8 @@ export async function reqOpr() {
                 msg : "Error on Req Opr List",
                 state: true,
                 code: 303
-                };
+            };
+
             reject (data);
         }  
     });

@@ -1,4 +1,4 @@
-import { client } from "../app.js";
+import { client } from "../../app.js";
 
 export function logsSave(params) {
     //Date Time

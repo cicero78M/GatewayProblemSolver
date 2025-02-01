@@ -1,4 +1,4 @@
-import { logsSave, logsUserSend } from "../logs_view.js";
+import { logsSave, logsUserSend } from "./logs_view.js";
 import { decrypted } from "../module/crypto.js";
 
 export async function reqOprView(params, from) {
@@ -10,17 +10,11 @@ export async function reqOprView(params, from) {
 
             params.forEach(element => {
                 
-                let oprData = new Object();
-
-                oprData.name = decrypted(element.name);
-                oprData.contact = decrypted(element.contact);
-                oprData.status = decrypted(element.status);
-        
                 logsUserSend (from,
                     `Data operator :
-                    Nama : ${oprData.name}
-                    Contact : ${oprData.contact}
-                    Working Status : ${oprData.status} 
+                    Nama : ${decrypted(element.name)}
+                    Contact : ${decrypted(element.contact)}
+                    Working Status : ${element.status} 
                     `
                 ); 
                 

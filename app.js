@@ -1,10 +1,11 @@
 //Route
-import express, { response } from 'express';
+import express from 'express';
 const app = express();
 
 //WWebjs
 import wwebjs from 'whatsapp-web.js';
-const { Client, LocalAuth } = wwebjs;
+
+const { Client, LocalAuth} = wwebjs;
 
 //.env
 import 'dotenv/config';
@@ -18,12 +19,12 @@ const { textSync } = figlet;
 
 //Banner
 import { set } from 'simple-banner';
-import { logsError, logsSave, logsSend, logsUserSend } from './src/logs_view.js';
+import { logsError, logsSave, logsSend, logsUserSend } from './src/view/logs_view.js';
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { newOpr, reqOpr } from './src/controller/add_opr.js';
 import { reqOprView } from './src/view/opr_req_view.js';
-import { decrypted, encrypted } from './src/module/crypto.js';
+import { decrypted } from './src/module/crypto.js';
 
 //Local Dependency
 //.env
@@ -136,58 +137,55 @@ client.on('message', async (msg) => {
                 error => logsError(error)
             )
         } else if ((msg.body).toLowerCase().startsWith('register#')){
-
+            //register#clientID
         } else {    
-            if (!msg.isStatus && !msg.fromMe && !(msg.from).includes('@g.us') && !contacts.includes(msg.from)){
-                
-                // Create newData
-                let newChat = new Object();
-        
-                newChat.timestamp = msg.timestamp;
-                newChat.from = msg.from;
-                newChat.opr = 'null';
-                newChat.status = 'true';
 
+            if (msg.from === "62895601093339@c.us"){
+                
                 try {
 
-                    let chatList = readdirSync(`json_data/chat_session`);
-
-                    console.log(chatList)
+                    // Create newData
+                    let oprReady = false;
+                    let chatList = readdirSync(`json_data/chat_session/`);
                     // Check Chat ID State & Data
                     if(chatList.includes(`${msg.from}.json`)){
                         chatList.forEach(element => {
                             if (element === `${msg.from}.json`){
-
                                 let chatData = JSON.parse(readFileSync(`json_data/chat_session/${element}`));
-
-                                if(chatData.status === "true" ){
-                                    logsUserSend(decrypted(chatData.opr), 
-                                    `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
+                                if(chatData.status){
+                                    logsUserSend(chatData.opr, 
+                                    `Client : ${msg.from}\n\nPesan : ${msg.body}`);
                                 }
                             }
                         });
 
                     } else {
-
                         reqOpr().then(
                             response =>{
                                 response.data.forEach(element => {
-                                    if (decrypted(element.status) === 'false' ){    
 
-                                        element.status = encrypted('true');
-                                        oprReady = true;
-                                        
+                                    if (!element.status){   
+
+                                        element.status = true;
+
+                                        let newChat = new Object();    
+                                        newChat.timestamp = msg.timestamp;
+                                        newChat.from = msg.from;
                                         newChat.opr = decrypted(element.contact);
-                                        writeFileSync(`json_data/chat_session/${msg.from}.json`, 
-                                            JSON.stringify(newChat));    
+                                        newChat.status = true;
+                
+                                        oprReady = true;        
+
+                                        writeFileSync(`json_data/chat_session/${msg.from}.json`, JSON.stringify(newChat));    
 
                                         writeFileSync(`json_data/opr_data/opr_file.json`, JSON.stringify(response.data));
 
-                                        logsUserSend(decrypted(response.contact), 
-                                        `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
+                                        logsUserSend(decrypted(element.contact), 
+                                        `Client : ${msg.from}\n\nPesan : ${msg.body}`);
                                     }
             
                                     if (!oprReady){
+                                        
                                         logsUserSend(
                                             msg.from, 
 `Mohon Maaf, Saat ini CS Kami sedang melayani pelanggan lainnya,
@@ -211,9 +209,9 @@ Terimakasih sudah bersabar menunggu.`
                         response =>{
                             response.data.forEach(element => {
 
-                                if (decrypted(element.status) === 'false'){
+                                if (!element.status){
 
-                                    element.status = encrypted('true');
+                                    element.status = true;
 
                                     writeFileSync(`json_data/opr_data/opr_file.json`, JSON.stringify(response.data));
 
@@ -224,7 +222,7 @@ Terimakasih sudah bersabar menunggu.`
                                         JSON.stringify(newChat));
         
                                     logsUserSend(decrypted(response.contact), 
-                                    `msg.from : ${msg.from}\n\nmsg.body : ${msg.body}`);
+                                    `Client : ${msg.from}\n\nPesan : ${msg.body}`);
                                 }
         
                                 if (!oprReady){
@@ -243,8 +241,7 @@ Terimakasih sudah bersabar menunggu.`
                         error => {
                             logsError(error);
                         }
-                    );
-                    
+                    );       
                 }
 
                 // if (!contact.isMyContact){
@@ -273,7 +270,7 @@ Terimakasih sudah bersabar menunggu.`
                 //         writeFileSync(`json_data/contact_data/contact_file.json`, JSON.stringify(contactList));
                 //     } 
                 // }
-            } 
+            }
         }
 
     } catch (error) { //Catching the Error Request
